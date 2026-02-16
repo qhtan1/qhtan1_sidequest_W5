@@ -41,11 +41,10 @@ const SEG_SECONDS = 6;
 let showDebug = true;
 
 function setup() {
-  createCanvas(VIEW_W, VIEW_H);
+  createCanvas(windowWidth, windowHeight);
   textFont("sans-serif");
   textSize(14);
 
-  // Start camera on first waypoint.
   camCenter.x = path[0].x;
   camCenter.y = path[0].y;
 }
@@ -157,4 +156,8 @@ function smoothstep(x) {
   // Clamp, then cubic smoothstep
   x = constrain(x, 0, 1);
   return x * x * (3 - 2 * x);
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
 }
