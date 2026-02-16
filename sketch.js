@@ -80,7 +80,12 @@ function draw() {
   const uRaw = segFloat - floor(segFloat);
 
   // ----- BREATHING PHASE SPLIT -----
-  const movePortion = 0.8; // 80% move
+  let movePortion = 0.8;
+
+  if (nearUndiscovered()) {
+    movePortion = 0.6;
+  }
+
   let u;
 
   if (uRaw < movePortion) {
@@ -97,7 +102,12 @@ function draw() {
     y: lerp(path[i0].y, path[i1].y, u),
   };
   // ----- SUBTLE DRIFT (meditative floating) -----
-  const driftStrength = 8;
+  let driftStrength = 8;
+
+  if (nearUndiscovered()) {
+    driftStrength = 3;
+  }
+
   const driftX = sin(millis() * 0.0003) * driftStrength;
   const driftY = cos(millis() * 0.0002) * driftStrength;
 
@@ -252,4 +262,16 @@ function drawDiscoverables() {
     fill(30, 180 * pulse);
     circle(d.x, d.y, d.r * 1.1);
   }
+}
+function nearUndiscovered() {
+  for (const d of discoverables) {
+    if (d.found) continue;
+
+    const dx = camCenter.x - d.x;
+    const dy = camCenter.y - d.y;
+    const dist = sqrt(dx * dx + dy * dy);
+
+    if (dist < 250) return true; // 半径可调
+  }
+  return false;
 }
