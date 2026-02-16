@@ -39,6 +39,25 @@ const SEG_SECONDS = 6;
 
 // Toggleable overlay to help you verify motion / math.
 let showDebug = true;
+// ---- Discoverables (Commit 3) ----
+const discoverables = [
+  { x: 520, y: 460, r: 12, found: false },
+  { x: 980, y: 560, r: 12, found: false },
+  { x: 1420, y: 380, r: 12, found: false },
+  { x: 1760, y: 640, r: 12, found: false },
+  { x: 2140, y: 820, r: 12, found: false },
+  { x: 2480, y: 1180, r: 12, found: false },
+  { x: 2060, y: 1600, r: 12, found: false },
+  { x: 1520, y: 1760, r: 12, found: false },
+  { x: 980, y: 1680, r: 12, found: false },
+  { x: 640, y: 1320, r: 12, found: false },
+];
+
+function discoveredCount() {
+  let c = 0;
+  for (const d of discoverables) if (d.found) c++;
+  return c;
+}
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -101,10 +120,12 @@ function draw() {
   push();
   translate(-cam.x, -cam.y);
   drawWorld();
+  drawDiscoverables();
   pop();
 
   // HUD (screen space)
   drawHUD(target);
+  text(`Discovered: ${discoveredCount()} / ${discoverables.length}`, 12, 80);
 }
 
 function drawWorld() {
@@ -167,14 +188,68 @@ function drawHUD(target) {
 function keyPressed() {
   if (key === "d" || key === "D") showDebug = !showDebug;
 }
+function mousePressed() {
+  const wx = mouseX + cam.x;
+  const wy = mouseY + cam.y;
+
+  for (const d of discoverables) {
+    if (d.found) continue;
+    const onScreen =
+      d.x >= cam.x &&
+      d.x <= cam.x + width &&
+      d.y >= cam.y &&
+      d.y <= cam.y + height;
+
+    if (!onScreen) continue;
+
+    const distSq = (wx - d.x) * (wx - d.x) + (wy - d.y) * (wy - d.y);
+    const hitR = d.r * 1.8;
+
+    if (distSq <= hitR * hitR) {
+      d.found = true;
+      break;
+    }
+  }
+}
 
 // --- Helpers ---
-function smoothstep(x) {
-  // Clamp, then cubic smoothstep
+function easeInOutSine(x) {
   x = constrain(x, 0, 1);
-  return x * x * (3 - 2 * x);
+  return -(cos(PI * x) - 1) / 2;
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+}
+function drawDiscoverables() {
+  const t = millis() * 0.004;
+
+  for (const d of discoverables) {
+    const onScreen =
+      d.x >= cam.x &&
+      d.x <= cam.x + width &&
+      d.y >= cam.y &&
+      d.y <= cam.y + height;
+
+    if (!onScreen) continue;
+
+    if (d.found) {
+      noStroke();
+      fill(30, 120);
+      circle(d.x, d.y, d.r * 1.4);
+      continue;
+    }
+
+    // Revealed (not found yet):
+    const pulse = 0.6 + 0.4 * sin(t + d.x * 0.01 + d.y * 0.01);
+
+    noFill();
+    stroke(30, 120 * pulse);
+    strokeWeight(2);
+    circle(d.x, d.y, d.r * 2.4);
+
+    noStroke();
+    fill(30, 180 * pulse);
+    circle(d.x, d.y, d.r * 1.1);
+  }
 }
