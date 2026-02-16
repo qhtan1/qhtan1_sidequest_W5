@@ -9,7 +9,7 @@ Goal (Commit 1):
 Controls:
 - (Optional) Press D to toggle debug overlay
 */
-const VERSION = "v0.6";
+const VERSION = "v0.7";
 let showDebug = false;
 
 const COL_BG = 235;
@@ -53,6 +53,9 @@ const discoverables = [
   { x: 980, y: 1680, r: 12, found: false },
   { x: 640, y: 1320, r: 12, found: false },
 ];
+
+// Discovery pulse effects (screen feedback for "found" moments)
+const pulses = [];
 
 function discoveredCount() {
   let c = 0;
@@ -145,6 +148,9 @@ function draw() {
 
   pop();
 
+  drawDiscoveryPulses();
+  drawExposureBreathing();
+
   drawVignette();
 
   // HUD (screen space)
@@ -236,6 +242,14 @@ function mousePressed() {
 
     if (distSq <= hitR * hitR) {
       d.found = true;
+
+      // Spawn a short-lived pulse at the discovery location
+      pulses.push({
+        x: d.x,
+        y: d.y,
+        t0: millis(),
+      });
+
       break;
     }
   }
@@ -292,6 +306,55 @@ function drawDiscoverables() {
     circle(d.x, d.y, d.r * 1.1);
   }
 }
+
+function drawDiscoveryPulses() {
+  // Draw pulses in world space (so they "belong" to the world)
+  push();
+
+  // Match the same cinematic transform used for the world
+  translate(width / 2, height / 2);
+  const zoom = 1.0 + 0.015 * sin(millis() * 0.00008);
+  scale(zoom);
+  translate(-width / 2, -height / 2);
+  translate(-cam.x, -cam.y);
+
+  noFill();
+  strokeWeight(2);
+
+  const now = millis();
+  for (let i = pulses.length - 1; i >= 0; i--) {
+    const p = pulses[i];
+    const age = now - p.t0;
+    const dur = 550; // ms
+
+    if (age > dur) {
+      pulses.splice(i, 1);
+      continue;
+    }
+
+    const k = age / dur; // 0..1
+    const eased = 1 - pow(1 - k, 3); // easeOutCubic-ish
+    const alpha = 120 * (1 - k);
+
+    stroke(30, alpha);
+    const r = 10 + 42 * eased;
+    circle(p.x, p.y, r * 2);
+  }
+
+  pop();
+}
+
+function drawExposureBreathing() {
+  // Very subtle global "exposure" breathing (screen space)
+  // Keep it tiny so it feels like film, not flicker.
+  const s = sin(millis() * 0.00006); // slow
+  const a = 10 + 10 * (s * 0.5 + 0.5); // ~10..20
+
+  noStroke();
+  fill(255, a);
+  rect(0, 0, width, height);
+}
+
 function nearUndiscovered() {
   for (const d of discoverables) {
     if (d.found) continue;
