@@ -9,7 +9,14 @@ Goal (Commit 1):
 Controls:
 - (Optional) Press D to toggle debug overlay
 */
-const VERSION = "v0.4";
+const VERSION = "v0.5";
+
+let showDebug = false;
+
+const COL_BG = 235;
+const COL_GRID = 242;
+const COL_TEXT = 30;
+
 const WORLD_W = 3200;
 const WORLD_H = 2200;
 
@@ -124,28 +131,40 @@ function draw() {
   cam.y = camCenter.y - height / 2;
 
   // ---------- 2) DRAW ----------
-  background(220);
+  background(COL_BG);
 
   // World layer (scrolling)
+  // World layer (scrolling) — cinematic transform
   push();
+
+  translate(width / 2, height / 2);
+
+  const zoom = 1.0 + 0.015 * sin(millis() * 0.00008);
+  scale(zoom);
+
+  translate(-width / 2, -height / 2);
+
   translate(-cam.x, -cam.y);
+
   drawWorld();
   drawDiscoverables();
+
   pop();
+
+  drawVignette();
 
   // HUD (screen space)
   drawHUD(target);
-  text(`Discovered: ${discoveredCount()} / ${discoverables.length}`, 12, 80);
 }
 
 function drawWorld() {
   // World background (big rectangle so it’s obvious the world is larger)
   noStroke();
-  fill(236);
+  fill(238);
   rect(0, 0, WORLD_W, WORLD_H);
 
   // Light grid to make motion easy to perceive
-  stroke(245);
+  stroke(COL_GRID);
   for (let x = 0; x <= WORLD_W; x += 160) line(x, 0, x, WORLD_H);
   for (let y = 0; y <= WORLD_H; y += 160) line(0, y, WORLD_W, y);
 
@@ -153,7 +172,7 @@ function drawWorld() {
   noStroke();
 
   // Soft blocks
-  fill(190, 205, 220);
+  fill(200, 210, 222);
   for (let i = 0; i < 34; i++) {
     const x = (i * 280) % WORLD_W;
     const y = (i * 170) % WORLD_H;
@@ -161,7 +180,7 @@ function drawWorld() {
   }
 
   // A few “islands” (circles) to break the grid monotony
-  fill(210, 220, 205);
+  fill(214, 220, 212);
   for (let i = 0; i < 16; i++) {
     const x = (i * 410 + 200) % WORLD_W;
     const y = (i * 260 + 140) % WORLD_H;
@@ -171,15 +190,14 @@ function drawWorld() {
 
 function drawHUD(target) {
   noStroke();
-  fill(20);
+  fill(COL_TEXT, 160);
   text(`Reflective Camera Cruise  ${VERSION}`, 12, 20);
 
-  text(
-    "Camera moves automatically through a world larger than the screen.",
-    12,
-    40,
-  );
-  text("Press D to toggle debug overlay.", 12, 60);
+  fill(COL_TEXT, 110);
+  text("Press D for debug.", 12, 40);
+
+  fill(COL_TEXT, 110);
+  text(`Discovered ${discoveredCount()}/${discoverables.length}`, 12, 62);
 
   if (!showDebug) return;
 
@@ -227,6 +245,16 @@ function mousePressed() {
 function easeInOutSine(x) {
   x = constrain(x, 0, 1);
   return -(cos(PI * x) - 1) / 2;
+}
+
+function drawVignette() {
+  noFill();
+  for (let i = 0; i < 14; i++) {
+    const a = map(i, 0, 13, 0, 55);
+    stroke(0, a);
+    strokeWeight(26);
+    rect(0, 0, width, height, 22);
+  }
 }
 
 function windowResized() {
