@@ -10,7 +10,6 @@ Controls:
 - (Optional) Press D to toggle debug overlay
 */
 const VERSION = "v0.5";
-
 let showDebug = false;
 
 const COL_BG = 235;
@@ -19,9 +18,6 @@ const COL_TEXT = 30;
 
 const WORLD_W = 3200;
 const WORLD_H = 2200;
-
-const VIEW_W = 800;
-const VIEW_H = 480;
 
 // Camera is described as a CENTER position in world space,
 // then converted to a top-left offset for translate().
@@ -44,8 +40,6 @@ const path = [
 // Seconds per segment (waypoint → next waypoint)
 const SEG_SECONDS = 6;
 
-// Toggleable overlay to help you verify motion / math.
-let showDebug = true;
 // ---- Discoverables (Commit 3) ----
 const discoverables = [
   { x: 520, y: 460, r: 12, found: false },
