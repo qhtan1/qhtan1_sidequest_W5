@@ -9,7 +9,7 @@ Goal (Commit 1):
 Controls:
 - (Optional) Press D to toggle debug overlay
 */
-const VERSION = "v0.5";
+const VERSION = "v0.6";
 let showDebug = false;
 
 const COL_BG = 235;
@@ -183,21 +183,21 @@ function drawWorld() {
 }
 
 function drawHUD(target) {
-  // Soft background strip for title area
   noStroke();
-  fill(255, 120); // subtle white wash
-  rect(16, 18, 420, 90, 14);
 
+  // Title
   textSize(15);
   fill(COL_TEXT, 200);
-  text(`Reflective Camera Cruise  ${VERSION}`, 24, 42);
+  text(`Reflective Camera Cruise  ${VERSION}`, 28, 44);
 
+  // Small helper text
   textSize(14);
   fill(COL_TEXT, 150);
-  text("Press D for debug.", 24, 64);
+  text("Press D for debug.", 28, 68);
 
+  // Discovery counter (low emphasis)
   fill(COL_TEXT, 150);
-  text(`Discovered ${discoveredCount()}/${discoverables.length}`, 24, 86);
+  text(`Discovered ${discoveredCount()}/${discoverables.length}`, 28, 92);
 
   if (!showDebug) return;
 
