@@ -183,27 +183,21 @@ function drawWorld() {
 }
 
 function drawHUD(target) {
+  // Soft background strip for title area
   noStroke();
+  fill(255, 120); // subtle white wash
+  rect(16, 18, 420, 90, 14);
 
   textSize(15);
-
-  fill(0, 40);
-  text(`Reflective Camera Cruise  ${VERSION}`, 13, 21);
-
-  fill(COL_TEXT, 170);
-  text(`Reflective Camera Cruise  ${VERSION}`, 12, 20);
+  fill(COL_TEXT, 200);
+  text(`Reflective Camera Cruise  ${VERSION}`, 24, 42);
 
   textSize(14);
+  fill(COL_TEXT, 150);
+  text("Press D for debug.", 24, 64);
 
-  fill(0, 30);
-  text("Press D for debug.", 13, 41);
-  fill(COL_TEXT, 120);
-  text("Press D for debug.", 12, 40);
-
-  fill(0, 30);
-  text(`Discovered ${discoveredCount()}/${discoverables.length}`, 13, 63);
-  fill(COL_TEXT, 120);
-  text(`Discovered ${discoveredCount()}/${discoverables.length}`, 12, 62);
+  fill(COL_TEXT, 150);
+  text(`Discovered ${discoveredCount()}/${discoverables.length}`, 24, 86);
 
   if (!showDebug) return;
 
