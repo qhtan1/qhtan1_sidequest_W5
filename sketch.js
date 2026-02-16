@@ -9,7 +9,7 @@ Goal (Commit 1):
 Controls:
 - (Optional) Press D to toggle debug overlay
 */
-
+const VERSION = "v0.4";
 const WORLD_W = 3200;
 const WORLD_H = 2200;
 
@@ -172,7 +172,8 @@ function drawWorld() {
 function drawHUD(target) {
   noStroke();
   fill(20);
-  text("Side Quest W5 — Reflective camera cruise (Commit 1)", 12, 20);
+  text(`Reflective Camera Cruise  ${VERSION}`, 12, 20);
+
   text(
     "Camera moves automatically through a world larger than the screen.",
     12,
