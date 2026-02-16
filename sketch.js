@@ -86,7 +86,7 @@ function draw() {
   if (uRaw < movePortion) {
     // Moving phase
     const moveU = uRaw / movePortion;
-    u = smoothstep(moveU);
+    u = easeInOutSine(moveU);
   } else {
     // Pause phase (freeze at end of segment)
     u = 1;
