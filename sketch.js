@@ -1,105 +1,160 @@
 /*
-Week 5 — Example 1: Top-Down Camera Follow (Centered, No Bounds)
+Week 5 — Side Quest: Reflective Camera Cruise (Commit 1)
 
-Course: GBDA302 | Instructors: Dr. Karen Cochrane & David Han
-Date: Feb. 12, 2026
+Goal (Commit 1):
+- Replace player-driven camera with an automatic “camera cruise”
+- Scroll through a world larger than the screen
+- Use smooth pacing (easing + gentle camera smoothing) to feel calm
 
-Move: WASD/Arrows
-
-Goal:
-- Keep player position in world space
-- Compute a camera offset from the player (view state)
-- Draw world using translate(-cam.x, -cam.y)
-- Draw HUD in screen space (no translate)
+Controls:
+- (Optional) Press D to toggle debug overlay
 */
 
-let player = { x: 300, y: 300, s: 3 }; // player in WORLD coords
-let cam = { x: 0, y: 0 }; // camera top-left in WORLD coords
+const WORLD_W = 3200;
+const WORLD_H = 2200;
 
-// World size (we draw a world rectangle + features, but we do NOT clamp camera)
-const WORLD_W = 2400;
-const WORLD_H = 1600;
-
-// Canvas / viewport size (SCREEN coords)
 const VIEW_W = 800;
 const VIEW_H = 480;
+
+// Camera is described as a CENTER position in world space,
+// then converted to a top-left offset for translate().
+let camCenter = { x: 0, y: 0 };
+let cam = { x: 0, y: 0 };
+
+// A looping path of “waypoints” for the camera to travel between.
+// In Commit 2 we’ll add pauses / “breathing” and richer motion cues.
+const path = [
+  { x: 350, y: 380 },
+  { x: 900, y: 520 },
+  { x: 1500, y: 420 },
+  { x: 2100, y: 760 },
+  { x: 2550, y: 1250 },
+  { x: 1950, y: 1650 },
+  { x: 1200, y: 1700 },
+  { x: 600, y: 1300 },
+];
+
+// Seconds per segment (waypoint → next waypoint)
+const SEG_SECONDS = 6;
+
+// Toggleable overlay to help you verify motion / math.
+let showDebug = true;
 
 function setup() {
   createCanvas(VIEW_W, VIEW_H);
   textFont("sans-serif");
   textSize(14);
-  noStroke();
+
+  // Start camera on first waypoint.
+  camCenter.x = path[0].x;
+  camCenter.y = path[0].y;
 }
 
 function draw() {
-  // ---------- 1) UPDATE GAME STATE (WORLD) ----------
-  // Input becomes a direction vector (dx, dy)
-  const dx =
-    (keyIsDown(RIGHT_ARROW) || keyIsDown(68)) -
-    (keyIsDown(LEFT_ARROW) || keyIsDown(65));
+  // ---------- 1) UPDATE VIEW STATE (CAMERA) ----------
+  // Compute where the camera *wants* to be along the path.
+  const t = millis() / 1000; // seconds
+  const segFloat = t / SEG_SECONDS;
+  const i0 = floor(segFloat) % path.length;
+  const i1 = (i0 + 1) % path.length;
 
-  const dy =
-    (keyIsDown(DOWN_ARROW) || keyIsDown(83)) -
-    (keyIsDown(UP_ARROW) || keyIsDown(87));
+  // Progress within this segment (0..1)
+  const uRaw = segFloat - floor(segFloat);
 
-  // Cheap diagonal normalization so diagonals aren’t faster
-  const len = max(1, abs(dx) + abs(dy));
+  // Ease progress so movement feels soft (no sudden starts/stops).
+  const u = smoothstep(uRaw);
 
-  // Move player in WORLD space (no bounds in Example 1)
-  player.x += (dx / len) * player.s;
-  player.y += (dy / len) * player.s;
+  const target = {
+    x: lerp(path[i0].x, path[i1].x, u),
+    y: lerp(path[i0].y, path[i1].y, u),
+  };
 
-  // ---------- 2) UPDATE VIEW STATE (CAMERA) ----------
-  // Center camera on player (NO constrain / bounds here)
-  cam.x = player.x - width / 2;
-  cam.y = player.y - height / 2;
+  // Gentle smoothing so the camera “floats” a bit behind the target.
+  const follow = 0.03; // smaller = slower/softer
+  camCenter.x = lerp(camCenter.x, target.x, follow);
+  camCenter.y = lerp(camCenter.y, target.y, follow);
 
-  // ---------- 3) DRAW ----------
+  // Convert center → top-left offset for translate()
+  cam.x = camCenter.x - width / 2;
+  cam.y = camCenter.y - height / 2;
+
+  // ---------- 2) DRAW ----------
   background(220);
 
-  // Draw the WORLD (scrolling layer) in world space
+  // World layer (scrolling)
   push();
   translate(-cam.x, -cam.y);
+  drawWorld();
+  pop();
 
-  // World background rectangle (so you can see the “world area”)
+  // HUD (screen space)
+  drawHUD(target);
+}
+
+function drawWorld() {
+  // World background (big rectangle so it’s obvious the world is larger)
   noStroke();
-  fill(235);
+  fill(236);
   rect(0, 0, WORLD_W, WORLD_H);
 
-  // Grid lines make camera motion easy to see
+  // Light grid to make motion easy to perceive
   stroke(245);
   for (let x = 0; x <= WORLD_W; x += 160) line(x, 0, x, WORLD_H);
   for (let y = 0; y <= WORLD_H; y += 160) line(0, y, WORLD_W, y);
 
-  // Obstacles (static world features)
+  // Simple “landmarks” (Commit 1: just enough structure to feel like a place)
   noStroke();
-  fill(170, 190, 210);
-  for (let i = 0; i < 30; i++) {
+
+  // Soft blocks
+  fill(190, 205, 220);
+  for (let i = 0; i < 34; i++) {
     const x = (i * 280) % WORLD_W;
-    const y = (i * 180) % WORLD_H;
-    rect(x + 40, y + 40, 80, 80, 10);
+    const y = (i * 170) % WORLD_H;
+    rect(x + 60, y + 60, 90, 90, 14);
   }
 
-  // Player (in world space)
-  fill(50, 110, 255);
-  rect(player.x - 12, player.y - 12, 24, 24, 5);
+  // A few “islands” (circles) to break the grid monotony
+  fill(210, 220, 205);
+  for (let i = 0; i < 16; i++) {
+    const x = (i * 410 + 200) % WORLD_W;
+    const y = (i * 260 + 140) % WORLD_H;
+    circle(x, y, 140);
+  }
+}
 
-  pop();
-
-  // HUD (screen space): drawn AFTER pop(), so it does not move with camera
+function drawHUD(target) {
   noStroke();
   fill(20);
-  text("Week 5 — Centered camera (no bounds). WASD/Arrows to move.", 12, 20);
+  text("Side Quest W5 — Reflective camera cruise (Commit 1)", 12, 20);
   text(
-    "Player(world): " +
-      (player.x | 0) +
-      ", " +
-      (player.y | 0) +
-      "   Cam(world): " +
-      (cam.x | 0) +
-      ", " +
-      (cam.y | 0),
+    "Camera moves automatically through a world larger than the screen.",
     12,
     40,
   );
+  text("Press D to toggle debug overlay.", 12, 60);
+
+  if (!showDebug) return;
+
+  // Debug readout
+  fill(0, 0, 0, 160);
+  rect(10, height - 92, 520, 78, 10);
+
+  fill(255);
+  text(
+    `camCenter(world): ${camCenter.x | 0}, ${camCenter.y | 0}   camTopLeft(world): ${cam.x | 0}, ${cam.y | 0}`,
+    22,
+    height - 62,
+  );
+  text(`target(world): ${target.x | 0}, ${target.y | 0}`, 22, height - 40);
+}
+
+function keyPressed() {
+  if (key === "d" || key === "D") showDebug = !showDebug;
+}
+
+// --- Helpers ---
+function smoothstep(x) {
+  // Clamp, then cubic smoothstep
+  x = constrain(x, 0, 1);
+  return x * x * (3 - 2 * x);
 }
