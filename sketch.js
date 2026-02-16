@@ -60,13 +60,30 @@ function draw() {
   // Progress within this segment (0..1)
   const uRaw = segFloat - floor(segFloat);
 
-  // Ease progress so movement feels soft (no sudden starts/stops).
-  const u = smoothstep(uRaw);
+  // ----- BREATHING PHASE SPLIT -----
+  const movePortion = 0.8; // 80% move
+  let u;
+
+  if (uRaw < movePortion) {
+    // Moving phase
+    const moveU = uRaw / movePortion;
+    u = smoothstep(moveU);
+  } else {
+    // Pause phase (freeze at end of segment)
+    u = 1;
+  }
 
   const target = {
     x: lerp(path[i0].x, path[i1].x, u),
     y: lerp(path[i0].y, path[i1].y, u),
   };
+  // ----- SUBTLE DRIFT (meditative floating) -----
+  const driftStrength = 8;
+  const driftX = sin(millis() * 0.0003) * driftStrength;
+  const driftY = cos(millis() * 0.0002) * driftStrength;
+
+  target.x += driftX;
+  target.y += driftY;
 
   // Gentle smoothing so the camera “floats” a bit behind the target.
   const follow = 0.03; // smaller = slower/softer
