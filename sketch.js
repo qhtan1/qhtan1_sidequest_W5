@@ -418,7 +418,7 @@ function drawCompletionBloom() {
   const wash = washIn * washOut;
 
   noStroke();
-  fill(255, 18 * wash);
+  fill(255, 40 * wash);
   rect(0, 0, width, height);
 
   // Particles: slow drift + subtle shimmer, then fade out
