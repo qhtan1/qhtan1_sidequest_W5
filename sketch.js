@@ -19,6 +19,11 @@ const COL_TEXT = 30;
 const WORLD_W = 3200;
 const WORLD_H = 2200;
 
+// Quiet completion bloom (cinematic, low-energy)
+let completionPlayed = false;
+const completionParticles = [];
+let completionT0 = 0;
+
 // Camera is described as a CENTER position in world space,
 // then converted to a top-left offset for translate().
 let camCenter = { x: 0, y: 0 };
@@ -150,8 +155,13 @@ function draw() {
 
   drawDiscoveryPulses();
   drawExposureBreathing();
-
+  drawCompletionBloom();
   drawVignette();
+
+  // Trigger completion bloom once when all symbols are discovered
+  if (!completionPlayed && discoveredCount() === discoverables.length) {
+    triggerCompletionBloom();
+  }
 
   // HUD (screen space)
   drawHUD(target);
@@ -200,6 +210,12 @@ function drawHUD(target) {
   textSize(14);
   fill(COL_TEXT, 150);
   text("Press D for debug.", 28, 68);
+
+  // Hide the counter after completion (optional, keeps it calm)
+  if (!completionPlayed) {
+    fill(COL_TEXT, 150);
+    text(`Discovered ${discoveredCount()}/${discoverables.length}`, 28, 92);
+  }
 
   // Discovery counter (low emphasis)
   fill(COL_TEXT, 150);
@@ -366,4 +382,68 @@ function nearUndiscovered() {
     if (dist < 250) return true; // 半径可调
   }
   return false;
+}
+function triggerCompletionBloom() {
+  completionPlayed = true;
+  completionT0 = millis();
+
+  // Spawn a small field of slow, low-contrast particles
+  const count = 90;
+  for (let i = 0; i < count; i++) {
+    completionParticles.push({
+      x: random(width),
+      y: random(height),
+      vx: random(-0.12, 0.12),
+      vy: random(-0.25, -0.05), // gently drifting upward
+      r: random(1.5, 3.2),
+      a: random(40, 90),
+      phase: random(TWO_PI),
+    });
+  }
+}
+
+function drawCompletionBloom() {
+  if (!completionPlayed) return;
+
+  const now = millis();
+  const age = now - completionT0;
+  const dur = 2600; // ms
+
+  // After the bloom ends, stop drawing it
+  if (age > dur) return;
+
+  // 0..1 progress
+  const k = constrain(age / dur, 0, 1);
+
+  // Soft white wash that rises then fades (quiet "release")
+  const washIn = smooth01(k / 0.25);
+  const washOut = 1 - smooth01((k - 0.55) / 0.45);
+  const wash = washIn * washOut;
+
+  noStroke();
+  fill(255, 18 * wash);
+  rect(0, 0, width, height);
+
+  // Particles: slow drift + subtle shimmer, then fade out
+  for (const p of completionParticles) {
+    p.x += p.vx;
+    p.y += p.vy;
+
+    // Wrap softly so it feels endless, not bounded
+    if (p.x < -10) p.x = width + 10;
+    if (p.x > width + 10) p.x = -10;
+    if (p.y < -10) p.y = height + 10;
+
+    const shimmer = 0.7 + 0.3 * sin(now * 0.004 + p.phase);
+    const alpha = p.a * (1 - k) * shimmer;
+
+    fill(255, alpha);
+    circle(p.x, p.y, p.r * 2);
+  }
+}
+
+// Helper: smooth 0..1 with clamping
+function smooth01(x) {
+  x = constrain(x, 0, 1);
+  return x * x * (3 - 2 * x);
 }
