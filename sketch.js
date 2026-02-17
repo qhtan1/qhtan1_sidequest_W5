@@ -9,7 +9,7 @@ Goal (Commit 1):
 Controls:
 - (Optional) Press D to toggle debug overlay
 */
-const VERSION = "v0.7";
+const VERSION = "v1.0";
 let showDebug = false;
 
 const COL_BG = 235;
