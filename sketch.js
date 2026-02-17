@@ -153,15 +153,16 @@ function draw() {
 
   pop();
 
-  drawDiscoveryPulses();
-  drawExposureBreathing();
-  drawCompletionBloom();
-  drawVignette();
-
   // Trigger completion bloom once when all symbols are discovered
   if (!completionPlayed && discoveredCount() === discoverables.length) {
     triggerCompletionBloom();
   }
+
+  drawDiscoveryPulses();
+  drawExposureBreathing();
+  drawCompletionBloom();
+  drawVignette();
+  drawHUD(target);
 
   // HUD (screen space)
   drawHUD(target);
@@ -216,10 +217,6 @@ function drawHUD(target) {
     fill(COL_TEXT, 150);
     text(`Discovered ${discoveredCount()}/${discoverables.length}`, 28, 92);
   }
-
-  // Discovery counter (low emphasis)
-  fill(COL_TEXT, 150);
-  text(`Discovered ${discoveredCount()}/${discoverables.length}`, 28, 92);
 
   if (!showDebug) return;
 
